@@ -8,17 +8,15 @@ const app = express();
 app.use(express.json());
 
 async function getPages() {
-  return await fetch(url, { cache: "no-store" })
-    .then((resp) => resp.json())
-    .then((resp) => resp.totalPages);
-  // return 1;
+  // return await fetch(url, { cache: "no-store" })
+  //   .then((resp) => resp.json())
+  //   .then((resp) => resp.totalPages);
+  return 2;
 }
 
 const getPlayers = async () => {
   const pages = await getPages();
   let urls = [];
-  let items = [];
-  console.log(pages)
   try {
     for (let page = 1; page <= pages; page++) {
       urls.push(
@@ -34,44 +32,31 @@ const getPlayers = async () => {
   // Retrive items
 
   return await Promise.all(urls)
-    .then((resp) => {
-      console.log(resp.length);
-      return resp.map((page) => {
-        console.log(page);
-        return page.items;
-      });
-    })
+    .then((resp) => resp.map((page) => page.items))
     .catch((err) => {
       console.log("ERR", err);
     });
 };
 
-
 const loadPlayers = async () => {
   const items = await getPlayers();
-  console.log(items)
-  // let players = [];
-  // items.forEach((player) => {
-  //   const newPlayer = {
-  //     name: player.name,
-  //     position: player.position,
-  //     nation: player.nation,
-  //     club: player.club.abbrName,
-  //   };
-  //   players.push(newPlayer);
 
-  //   // console.log("PLAYER", newPlayer);
-  //   // const Player = new Player({
-  //   //   name:
-  //   // })
-  // });
-  // Player.insertMany(players)
-  //   .then((resp) => {
-  //     console.log("User successfully created", resp);
-  //   })
-  //   .catch((err) => {
-  //     console.log("ERROR", err);
-  //   });
+  let players = items.flat(1).map((item) => {
+    return {
+      name: item.name,
+      position: item.position,
+      nation: item.nation.name,
+      club: item.club.name,
+    };
+  });
+
+  Player.insertMany(players)
+    .then((playerCreated) => {
+      console.log(`${playerCreated.length} players have been created`);
+    })
+    .catch((err) => {
+      console.log("ERROR", err);
+    });
 };
 
 loadPlayers();
