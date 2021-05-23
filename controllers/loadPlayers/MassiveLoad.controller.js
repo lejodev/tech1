@@ -7,40 +7,39 @@ const Player = require("../../models/Player");
 const app = express();
 app.use(express.json());
 
-async function getPages() {
-  // return await fetch(url, { cache: "no-store" })
-  //   .then((resp) => resp.json())
-  //   .then((resp) => resp.totalPages);
-  return 2;
-}
+const getPages = async () => {
+  return await fetch(url, { cache: "no-store" })
+    .then((resp) => resp.json())
+    .then((resp) => resp.totalPages);
+};
 
 const getPlayers = async () => {
   const pages = await getPages();
   let urls = [];
-  try {
-    for (let page = 1; page <= pages; page++) {
-      urls.push(
-        fetch(`${url}/?page=${page}`, { cache: "no-store" }).then((resp) =>
-          resp.json()
-        )
-      );
-    }
-  } catch (error) {
-    console.log("Error", error);
+
+  for (let page = 1; page <= pages; page++) {
+    urls.push(
+      fetch(`${url}/?page=${page}`, { cache: "no-store" }).then((resp) =>
+        resp.json()
+      )
+    );
   }
 
-  // Retrive items
+  let step = 100;
 
-  return await Promise.all(urls)
-    .then((resp) => resp.map((page) => page.items))
-    .catch((err) => {
-      console.log("ERR", err);
-    });
+  while (urls.length > 0) {
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    let urlsToProcess = urls.splice(0, step);
+    Promise.all(urlsToProcess)
+      .then((resp) => resp.map((page) => page.items))
+      .then((items) => loadPlayers(items))
+      .catch((err) => {
+        console.log("ERR", err);
+      });
+  }
 };
 
-const loadPlayers = async () => {
-  const items = await getPlayers();
-
+const loadPlayers = (items) => {
   let players = items.flat(1).map((item) => {
     return {
       name: item.name,
@@ -59,6 +58,7 @@ const loadPlayers = async () => {
     });
 };
 
-loadPlayers();
+// getPlayers().then();
+// loadPlayers();
 
 module.exports = getPlayers;
